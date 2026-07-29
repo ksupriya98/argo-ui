@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { getProductById, products } from "../data/products";
 import { useCart } from "../context/CartContext";
+import { useProducts } from "../hooks/useProducts";
 import ProductCard from "../components/ProductCard";
 import "./pages.css";
 
@@ -11,10 +11,24 @@ export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
-  const product = getProductById(id);
+  const { products, loading } = useProducts();
+  const product = products.find((p) => String(p.id) === String(id));
 
   const [qty, setQty] = useState(1);
   const [variant, setVariant] = useState(SIZE_VARIANTS[0]);
+
+  if (loading) {
+    return (
+      <section className="page">
+        <div className="container">
+          <div className="empty-state">
+            <span className="icon">🌱</span>
+            <h2>Loading product…</h2>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   if (!product) {
     return (

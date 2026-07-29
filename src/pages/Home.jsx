@@ -5,9 +5,10 @@ import PromoBanner from "../components/PromoBanner";
 import Categories from "../components/Categories";
 import Testimonials from "../components/Testimonials";
 import Newsletter from "../components/Newsletter";
-import { products } from "../data/products";
+import { useProducts } from "../hooks/useProducts";
 
 export default function Home() {
+  const { products } = useProducts();
   const bestSellers = products.slice(0, 8);
   const allProducts = products.slice(4);
 

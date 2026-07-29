@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import { placeOrder as submitOrder } from "../api/orders";
 import "./pages.css";
 
 const SHIPPING_THRESHOLD = 150;
@@ -24,6 +25,7 @@ export default function Checkout() {
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
   const [placing, setPlacing] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
 
   const shipping = subtotal >= SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE;
   const total = subtotal + shipping;
@@ -64,16 +66,42 @@ export default function Checkout() {
     return Object.keys(err).length === 0;
   };
 
-  const placeOrder = (e) => {
+  const placeOrder = async (e) => {
     e.preventDefault();
     if (!validate()) {
       const firstError = document.querySelector(".field .err");
       firstError?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
+
     setPlacing(true);
-    const orderId = "FRT" + Math.floor(100000 + Math.random() * 900000);
-    setTimeout(() => {
+    setSubmitError(null);
+
+    const payload = {
+      customerName: `${form.firstName} ${form.lastName}`,
+      email: form.email,
+      phone: form.phone,
+      address: form.address,
+      city: form.city,
+      state: form.state,
+      zip: form.zip,
+      notes: form.notes,
+      subtotal,
+      shipping,
+      totalAmount: total,
+      paymentMethod: "Cash on Delivery",
+      items: items.map((i) => ({
+        productId: i.id,
+        name: i.name,
+        variant: i.variant || null,
+        price: i.price,
+        quantity: i.qty,
+      })),
+    };
+
+    try {
+      const saved = await submitOrder(payload);
+      const orderId = "FRT" + String(saved?.id ?? "").padStart(6, "0");
       clear();
       navigate("/order-confirmation", {
         state: {
@@ -84,7 +112,12 @@ export default function Checkout() {
           address: `${form.address}, ${form.city}, ${form.state} ${form.zip}`,
         },
       });
-    }, 700);
+    } catch (err) {
+      setSubmitError(
+        "We couldn't place your order right now. Please make sure the server is running and try again."
+      );
+      setPlacing(false);
+    }
   };
 
   const inputClass = (key) => `${errors[key] ? "invalid" : ""}`;
@@ -247,6 +280,11 @@ export default function Checkout() {
               <strong>${total.toFixed(2)}</strong>
             </div>
 
+            {submitError && (
+              <span className="err" style={{ display: "block", marginBottom: 10 }}>
+                {submitError}
+              </span>
+            )}
             <button type="submit" className="btn btn-primary" disabled={placing}>
               {placing ? "Placing Order..." : "Place Order (COD)"}
             </button>

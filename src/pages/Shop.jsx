@@ -1,13 +1,15 @@
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
-import { products, productCategories } from "../data/products";
+import { productCategories } from "../data/products";
+import { useProducts } from "../hooks/useProducts";
 import "./pages.css";
 
 export default function Shop() {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeCategory = searchParams.get("category") || "All";
   const [sort, setSort] = useState("featured");
+  const { products, loading } = useProducts();
 
   const setCategory = (cat) => {
     if (cat === "All") {
@@ -28,7 +30,7 @@ export default function Shop() {
     if (sort === "price-high") list.sort((a, b) => b.price - a.price);
     if (sort === "name") list.sort((a, b) => a.name.localeCompare(b.name));
     return list;
-  }, [activeCategory, sort]);
+  }, [activeCategory, sort, products]);
 
   return (
     <>
@@ -93,7 +95,13 @@ export default function Shop() {
                 </select>
               </div>
 
-              {filtered.length === 0 ? (
+              {loading ? (
+                <div className="empty-state">
+                  <span className="icon">🌱</span>
+                  <h2>Loading products…</h2>
+                  <p>Fetching the latest catalog.</p>
+                </div>
+              ) : filtered.length === 0 ? (
                 <div className="empty-state">
                   <span className="icon">🌱</span>
                   <h2>No products found</h2>
